@@ -27,11 +27,11 @@
         "tab": "Guides",
         "groups": [
           {
-            "group": "Core Workflows",
+            "group": "Platform behavior",
             "pages": [
-              "docs/guides/external-api-first-order",
               "docs/guides/external-api-heavy-packages",
-              "docs/guides/external-api-errors-and-retries"
+              "docs/guides/external-api-errors-and-retries",
+              "docs/guides/external-api-test-vs-live"
             ]
           }
         ]
@@ -40,10 +40,12 @@
         "tab": "API Reference",
         "groups": [
           {
-            "group": "Reference Guides",
+            "group": "Core reference",
             "pages": [
+              "docs/api-reference/overview",
               "docs/api-reference/authentication",
-              "docs/api-reference/webhooks"
+              "docs/api-reference/webhooks",
+              "docs/api-reference/error-catalog"
             ]
           },
           {
