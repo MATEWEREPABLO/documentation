@@ -1,8 +1,8 @@
 # Rate limiting
 
-Yonne does not currently publish fixed rate-limit numbers in the API contract.
+Yonne always enforces rate limiting to protect platform stability and ensure fair usage across merchants.
 
-You should still treat the API as a shared production service and send requests with predictable, controlled traffic patterns.
+Treat the API as a shared production service and send requests with predictable, controlled traffic patterns.
 
 ## Recommended client behavior
 
@@ -34,4 +34,4 @@ Resolve the underlying issue before sending another request.
 
 Throttle bursts in your own backend, especially during checkout spikes, imports, or replay jobs.
 
-If Yonne introduces explicit `429` responses or response headers later, update your client policy to honor them exactly.
+Honor any `429` responses or rate-limit headers returned by the API and adapt your retry policy accordingly.
