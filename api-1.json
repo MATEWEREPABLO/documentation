@@ -1,0 +1,1716 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Yonne External API",
+    "version": "2.0.0",
+    "description": "Yonne External API lets merchants quote deliveries, create orders, track progress, cancel eligible orders, inspect wallet activity, and test webhook integrations. This specification documents the canonical public contract. The backend may still accept legacy camelCase aliases for backward compatibility, but all examples here use snake_case so integrations have one clear format to follow."
+  },
+  "servers": [
+    {
+      "url": "https://api.yonne.app",
+      "description": "Production"
+    },
+    {
+      "url": "https://api.yonne.app",
+      "description": "Sandbox/test mode uses the same host with a `yonne_test_...` API key."
+    }
+  ],
+  "tags": [
+    {
+      "name": "Getting Started",
+      "description": "Validate API keys and retrieve merchant integration context."
+    },
+    {
+      "name": "Quotes",
+      "description": "Price deliveries before creating an order."
+    },
+    {
+      "name": "Orders",
+      "description": "Create, inspect, cancel, and track merchant orders."
+    },
+    {
+      "name": "Wallet",
+      "description": "Inspect wallet balance and merchant transaction history."
+    },
+    {
+      "name": "Testing",
+      "description": "Webhook simulation and test-only tooling."
+    }
+  ],
+  "security": [
+    {
+      "ApiKeyHeader": []
+    }
+  ],
+  "paths": {
+    "/api/v1/external/validate": {
+      "get": {
+        "tags": [
+          "Getting Started"
+        ],
+        "summary": "Validate an API key",
+        "description": "Call this first when onboarding a merchant integration. It confirms that the supplied API key is active and returns the merchant's current pickup configuration and wallet context.",
+        "responses": {
+          "200": {
+            "description": "API key is valid and merchant context was returned.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidateResponse"
+                },
+                "examples": {
+                  "success": {
+                    "value": {
+                      "success": true,
+                      "valid": true,
+                      "balance": 125000,
+                      "currency": "MWK",
+                      "hasPickup": true,
+                      "pickupAddress": "Area 47, Lilongwe",
+                      "pickupLatitude": -13.9626,
+                      "pickupLongitude": 33.7741,
+                      "businessName": "Domaso Stores"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        }
+      }
+    },
+    "/api/v1/external/pickup": {
+      "get": {
+        "tags": [
+          "Getting Started"
+        ],
+        "summary": "Get the merchant pickup location",
+        "description": "Returns the merchant pickup address and coordinates that are used as the default origin for quotes and order creation when pickup coordinates are not sent in the request.",
+        "responses": {
+          "200": {
+            "description": "Pickup location returned.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PickupResponse"
+                },
+                "examples": {
+                  "success": {
+                    "value": {
+                      "success": true,
+                      "pickupAddress": "Area 47, Lilongwe",
+                      "pickupLatitude": -13.9626,
+                      "pickupLongitude": 33.7741
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/PickupNotConfigured"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        }
+      }
+    },
+    "/api/v1/external/quote": {
+      "post": {
+        "tags": [
+          "Quotes"
+        ],
+        "summary": "Quote a delivery",
+        "description": "Use this endpoint during checkout before creating an order. It prices the shipment from pickup to destination, applies the configured courier and platform fee logic, and returns the smallest vehicle class that can carry the package under the current weight rules. Canonical field names are snake_case. Legacy aliases such as `pickupLatitude`, `deliveryLongitude`, `productType`, `weightEstimate`, `deliverySpeed`, and `vehicleType` may still be accepted by the backend but are not the documented contract.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/QuoteRequest"
+              },
+              "examples": {
+                "light_package": {
+                  "value": {
+                    "pickup_lat": -13.9626,
+                    "pickup_lng": 33.7741,
+                    "delivery_lat": -13.9831,
+                    "delivery_lng": 33.7812,
+                    "product_type": "Package",
+                    "weight_estimate": "0-5kg",
+                    "delivery_speed": "standard"
+                  }
+                },
+                "heavy_package": {
+                  "value": {
+                    "delivery_lat": -13.9831,
+                    "delivery_lng": 33.7812,
+                    "product_type": "Electronics",
+                    "weight_estimate": "20-50kg",
+                    "total_weight_kg": 42,
+                    "delivery_speed": "standard"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Quote successfully returned.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QuoteResponse"
+                },
+                "examples": {
+                  "success": {
+                    "value": {
+                      "success": true,
+                      "price": 7350,
+                      "delivery_fee": 7350,
+                      "currency": "MWK",
+                      "eta": "24m",
+                      "eta_minutes": 24,
+                      "service_id": "car_std",
+                      "suggested_vehicle_class": "CAR",
+                      "required_weight_kg": 42,
+                      "distance_km": 3.9,
+                      "environment": "live",
+                      "breakdown": {
+                        "courier_base_rate": 450,
+                        "platform_fee_per_km": 150,
+                        "distance_km": 3.9,
+                        "courier_base_cost": 1755,
+                        "courier_weighted_cost": 3159,
+                        "courier_total": 3159,
+                        "platform_fee": 585,
+                        "weight_multiplier": 1.8,
+                        "speed_multiplier": 1,
+                        "subtotal": 3744,
+                        "minimum_amount": 2500,
+                        "minimum_applied": false,
+                        "total_amount": 3744
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        }
+      }
+    },
+    "/api/v1/external/create-order": {
+      "post": {
+        "tags": [
+          "Orders"
+        ],
+        "summary": "Create a merchant order",
+        "description": "Use this after a successful quote to create a live or test order. Live mode debits the merchant wallet, attempts capacity-aware rider selection, and dispatches notifications and webhooks. Test mode skips real billing and rider dispatch side effects. The `Idempotency-Key` header is strongly recommended for safe retries. Weight and capacity rules are enforced here: the API may return `ERR_NO_CAPACITY_AVAILABLE` when no online rider can physically carry the shipment.",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": false,
+            "description": "Recommended for safe retries. Re-using the same key for the same merchant and endpoint within 24 hours returns the cached success response instead of creating a duplicate order.",
+            "schema": {
+              "type": "string",
+              "maxLength": 255
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateOrderRequest"
+              },
+              "examples": {
+                "standard_order": {
+                  "value": {
+                    "delivery_address": "Mchesi, Lilongwe",
+                    "receiver_name": "Jane Banda",
+                    "receiver_phone": "+265991234567",
+                    "delivery_fee": 7350,
+                    "delivery_lat": -13.9831,
+                    "delivery_lng": 33.7812,
+                    "pickup_lat": -13.9626,
+                    "pickup_lng": 33.7741,
+                    "item_name": "Printer cartridge",
+                    "product_type": "Package",
+                    "weight_estimate": "0-5kg",
+                    "merchant_reference_id": "WEB-100245",
+                    "metadata": {
+                      "channel": "woocommerce",
+                      "warehouse": "lilongwe-main"
+                    }
+                  }
+                },
+                "heavy_order": {
+                  "value": {
+                    "delivery_address": "Area 18, Lilongwe",
+                    "receiver_name": "John Phiri",
+                    "delivery_fee": 18500,
+                    "delivery_lat": -13.954,
+                    "delivery_lng": 33.792,
+                    "item_name": "Commercial freezer",
+                    "product_type": "Appliance",
+                    "weight_estimate": "50kg+",
+                    "total_weight_kg": 95,
+                    "special_notes": "Requires vehicle with enclosed cargo space"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Order created successfully. The same schema is also returned for a cached idempotent replay, with `idempotent_replay` set to `true`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateOrderResponse"
+                },
+                "examples": {
+                  "created": {
+                    "value": {
+                      "success": true,
+                      "tracking_id": "YON-TRK-123456",
+                      "order_id": "ORD-123456",
+                      "status": "searching",
+                      "tracking_link": "https://yonne.app/track/YON-TRK-123456",
+                      "delivery_fee": 7350,
+                      "wallet_balance": 117650,
+                      "currency": "MWK",
+                      "pickup_address": "Area 47, Lilongwe",
+                      "delivery_address": "Mchesi, Lilongwe",
+                      "wc_order_id": "100245",
+                      "merchant_reference_id": "WEB-100245",
+                      "metadata": {
+                        "channel": "woocommerce",
+                        "warehouse": "lilongwe-main"
+                      },
+                      "environment": "live"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "402": {
+            "$ref": "#/components/responses/InsufficientFunds"
+          },
+          "422": {
+            "$ref": "#/components/responses/NoCapacityAvailable"
+          }
+        }
+      }
+    },
+    "/api/v1/external/orders": {
+      "get": {
+        "tags": [
+          "Orders"
+        ],
+        "summary": "List merchant orders",
+        "description": "Returns paginated orders previously created through the external API for the authenticated merchant and current key environment.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/Page"
+          },
+          {
+            "$ref": "#/components/parameters/PerPage"
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "description": "Filter by exact order status such as `Pending`, `Awaiting Acceptance`, or `Cancelled`.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Order list returned.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListOrdersResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        }
+      }
+    },
+    "/api/v1/external/orders/{order_id}": {
+      "get": {
+        "tags": [
+          "Orders"
+        ],
+        "summary": "Fetch a single order",
+        "description": "Returns the current order snapshot for one merchant-owned external order. This is the reference endpoint to refresh an order after creation, tracking, or cancellation.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/OrderId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Order returned.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetOrderResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/OrderNotFound"
+          }
+        }
+      }
+    },
+    "/api/v1/external/orders/{order_id}/cancel": {
+      "post": {
+        "tags": [
+          "Orders"
+        ],
+        "summary": "Cancel an order before pickup",
+        "description": "Cancels an order that has not yet reached pickup, transit, delivery, or completion. If the wallet was previously charged, the merchant receives a refund back to the same environment wallet.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/OrderId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Order cancelled and refund logic applied if needed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CancelOrderResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/CannotCancelOrder"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/OrderNotFound"
+          }
+        }
+      }
+    },
+    "/api/v1/external/orders/{order_id}/tracking": {
+      "get": {
+        "tags": [
+          "Orders"
+        ],
+        "summary": "Get live tracking details",
+        "description": "Returns the public tracking URL plus the current rider coordinates and ETA when rider location is available.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/OrderId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Tracking details returned.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TrackingResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/OrderNotFound"
+          }
+        }
+      }
+    },
+    "/api/v1/external/orders/{order_id}/pod": {
+      "get": {
+        "tags": [
+          "Orders"
+        ],
+        "summary": "Get proof of delivery",
+        "description": "Returns proof-of-delivery data for delivered or completed orders. If the order is complete but no POD asset is attached, the endpoint still returns success with `pod: null` and a message.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/OrderId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "POD response returned.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PodResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/PodUnavailable"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/OrderNotFound"
+          }
+        }
+      }
+    },
+    "/api/v1/external/wallet": {
+      "get": {
+        "tags": [
+          "Wallet"
+        ],
+        "summary": "Get wallet balance and transactions",
+        "description": "Returns the merchant wallet balance and paginated transaction history for the current key environment. Use this to confirm available funds before creating live orders and to reconcile deductions or refunds.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/Page"
+          },
+          {
+            "$ref": "#/components/parameters/PerPage"
+          },
+          {
+            "name": "type",
+            "in": "query",
+            "required": false,
+            "description": "Filter transactions by type such as `delivery_fee` or `refund`.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Wallet response returned.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WalletResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        }
+      }
+    },
+    "/api/v1/external/test/simulate-status": {
+      "post": {
+        "tags": [
+          "Testing"
+        ],
+        "summary": "Simulate a webhook status transition",
+        "description": "Testing helper that updates an order's status and dispatches the corresponding merchant webhook event. Use this in development and QA to verify webhook handlers without waiting for a real rider lifecycle.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SimulateStatusRequest"
+              },
+              "examples": {
+                "simulate_in_transit": {
+                  "value": {
+                    "order_id": "ORD-123456",
+                    "status": "In Transit"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Webhook simulation completed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SimulateStatusResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/OrderNotFound"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "ApiKeyHeader": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-API-Key",
+        "description": "Merchant API key generated in the Yonne dashboard. Production keys start with `yonne_live_`; sandbox keys start with `yonne_test_`."
+      }
+    },
+    "parameters": {
+      "Page": {
+        "name": "page",
+        "in": "query",
+        "required": false,
+        "description": "Page number starting from 1.",
+        "schema": {
+          "type": "integer",
+          "default": 1,
+          "minimum": 1
+        }
+      },
+      "PerPage": {
+        "name": "per_page",
+        "in": "query",
+        "required": false,
+        "description": "Number of items to return per page. The API caps this internally.",
+        "schema": {
+          "type": "integer",
+          "default": 20,
+          "minimum": 1,
+          "maximum": 100
+        }
+      },
+      "OrderId": {
+        "name": "order_id",
+        "in": "path",
+        "required": true,
+        "description": "The Yonne order identifier returned by `create-order`, such as `ORD-123456`.",
+        "schema": {
+          "type": "string"
+        }
+      }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "The request could not be processed because a required field is missing or invalid.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "examples": {
+              "bad_request": {
+                "value": {
+                  "success": false,
+                  "error": "Missing coordinates",
+                  "message": "delivery_lat and delivery_lng are required."
+                }
+              }
+            }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "The merchant API key is missing, malformed, or inactive.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "examples": {
+              "unauthorized": {
+                "value": {
+                  "success": false,
+                  "error": "Unauthorized",
+                  "message": "API key required. Send X-API-Key header or Authorization: Bearer <key>."
+                }
+              }
+            }
+          }
+        }
+      },
+      "PickupNotConfigured": {
+        "description": "No pickup location is configured for the merchant.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "examples": {
+              "pickup_missing": {
+                "value": {
+                  "success": false,
+                  "error": "Pickup not set",
+                  "message": "Merchant pickup location is not set. Set it in your dashboard."
+                }
+              }
+            }
+          }
+        }
+      },
+      "InsufficientFunds": {
+        "description": "The merchant wallet does not have enough balance to create the live order.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/InsufficientFundsResponse"
+            },
+            "examples": {
+              "insufficient_funds": {
+                "value": {
+                  "success": false,
+                  "error": "Insufficient Funds",
+                  "message": "Wallet balance is insufficient for this delivery. Please top up.",
+                  "balance": 1500,
+                  "required": 7350
+                }
+              }
+            }
+          }
+        }
+      },
+      "NoCapacityAvailable": {
+        "description": "No online rider can physically carry the shipment at the required weight.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/NoCapacityResponse"
+            },
+            "examples": {
+              "no_capacity": {
+                "value": {
+                  "success": false,
+                  "error": "ERR_NO_CAPACITY_AVAILABLE",
+                  "message": "No online rider has sufficient vehicle capacity for this package weight.",
+                  "required_weight_kg": 95
+                }
+              }
+            }
+          }
+        }
+      },
+      "OrderNotFound": {
+        "description": "The order was not found for the authenticated merchant in the current environment.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "examples": {
+              "not_found": {
+                "value": {
+                  "success": false,
+                  "error": "Order not found"
+                }
+              }
+            }
+          }
+        }
+      },
+      "CannotCancelOrder": {
+        "description": "The order cannot be cancelled at its current stage.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/CannotCancelResponse"
+            },
+            "examples": {
+              "cannot_cancel": {
+                "value": {
+                  "success": false,
+                  "error": "Order cannot be cancelled at this stage",
+                  "status": "In Transit"
+                }
+              }
+            }
+          }
+        }
+      },
+      "PodUnavailable": {
+        "description": "Proof of delivery is only available after delivery or completion.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "examples": {
+              "pod_unavailable": {
+                "value": {
+                  "success": false,
+                  "error": "POD is available only after delivery"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "const": false
+          },
+          "error": {
+            "type": "string",
+            "description": "Short machine-readable or human-readable error label."
+          },
+          "message": {
+            "type": "string",
+            "description": "Human-readable explanation suitable for displaying in dashboards or logs."
+          },
+          "code": {
+            "type": "string",
+            "description": "Optional secondary application error code."
+          }
+        },
+        "required": [
+          "success",
+          "error"
+        ]
+      },
+      "InsufficientFundsResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ErrorResponse"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "balance": {
+                "type": "number"
+              },
+              "required": {
+                "type": "number"
+              }
+            }
+          }
+        ]
+      },
+      "NoCapacityResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ErrorResponse"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "required_weight_kg": {
+                "type": "number",
+                "description": "The weight threshold used for dispatch filtering."
+              }
+            }
+          }
+        ]
+      },
+      "CannotCancelResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ErrorResponse"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "status": {
+                "type": "string"
+              }
+            }
+          }
+        ]
+      },
+      "Pagination": {
+        "type": "object",
+        "properties": {
+          "page": {
+            "type": "integer"
+          },
+          "perPage": {
+            "type": "integer"
+          },
+          "totalPages": {
+            "type": "integer"
+          },
+          "totalItems": {
+            "type": "integer"
+          }
+        }
+      },
+      "PriceBreakdown": {
+        "type": "object",
+        "properties": {
+          "courier_base_rate": {
+            "type": "number"
+          },
+          "platform_fee_per_km": {
+            "type": "number"
+          },
+          "distance_km": {
+            "type": "number"
+          },
+          "courier_base_cost": {
+            "type": "number"
+          },
+          "courier_weighted_cost": {
+            "type": "number"
+          },
+          "courier_total": {
+            "type": "number"
+          },
+          "platform_fee": {
+            "type": "number"
+          },
+          "weight_multiplier": {
+            "type": "number"
+          },
+          "speed_multiplier": {
+            "type": "number"
+          },
+          "subtotal": {
+            "type": "number"
+          },
+          "minimum_amount": {
+            "type": "number"
+          },
+          "minimum_applied": {
+            "type": "boolean"
+          },
+          "total_amount": {
+            "type": "number"
+          }
+        }
+      },
+      "Coordinates": {
+        "type": "object",
+        "properties": {
+          "latitude": {
+            "type": "number"
+          },
+          "longitude": {
+            "type": "number"
+          }
+        }
+      },
+      "Receiver": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "phone": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "email": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "email"
+          }
+        }
+      },
+      "ValidateResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "valid": {
+            "type": "boolean"
+          },
+          "balance": {
+            "type": "number"
+          },
+          "currency": {
+            "type": "string"
+          },
+          "hasPickup": {
+            "type": "boolean"
+          },
+          "pickupAddress": {
+            "type": "string"
+          },
+          "pickupLatitude": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "pickupLongitude": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "businessName": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "success",
+          "valid",
+          "balance",
+          "currency",
+          "hasPickup",
+          "pickupAddress",
+          "businessName"
+        ]
+      },
+      "PickupResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "pickupAddress": {
+            "type": "string"
+          },
+          "pickupLatitude": {
+            "type": "number"
+          },
+          "pickupLongitude": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "success",
+          "pickupAddress",
+          "pickupLatitude",
+          "pickupLongitude"
+        ]
+      },
+      "QuoteRequest": {
+        "type": "object",
+        "required": [
+          "delivery_lat",
+          "delivery_lng"
+        ],
+        "properties": {
+          "pickup_lat": {
+            "type": "number",
+            "description": "Pickup latitude. If omitted, the merchant's configured pickup location is used. Legacy aliases that may still be accepted by the backend include `pickupLatitude` and `pickup_latitude`."
+          },
+          "pickup_lng": {
+            "type": "number",
+            "description": "Pickup longitude. If omitted, the merchant's configured pickup location is used. Legacy aliases that may still be accepted by the backend include `pickupLongitude` and `pickup_longitude`."
+          },
+          "delivery_lat": {
+            "type": "number",
+            "description": "Destination latitude. Legacy aliases that may still be accepted by the backend include `deliveryLatitude` and `delivery_latitude`."
+          },
+          "delivery_lng": {
+            "type": "number",
+            "description": "Destination longitude. Legacy aliases that may still be accepted by the backend include `deliveryLongitude` and `delivery_longitude`."
+          },
+          "product_type": {
+            "type": "string",
+            "description": "Merchant product category shown in pricing and analytics. Legacy alias: `productType`."
+          },
+          "weight_estimate": {
+            "type": "string",
+            "description": "Weight bucket used for pricing and dispatch. Supported buckets: `0-5kg`, `5-10kg`, `10-20kg`, `20-50kg`, `50kg+`. Legacy alias: `weightEstimate`."
+          },
+          "delivery_speed": {
+            "type": "string",
+            "description": "Delivery priority such as `standard`, `express`, `same_day`, or `priority`. Legacy alias: `deliverySpeed`."
+          },
+          "total_weight_kg": {
+            "type": "number",
+            "description": "Actual package weight in kilograms. When present, dispatch uses the greater of this value and the bucket-implied weight."
+          },
+          "vehicle_type": {
+            "type": "string",
+            "description": "Optional merchant hint such as `bike`, `car`, `van`, or `truck`. In quotes, this influences the suggested speed tier. Legacy alias: `vehicleType`."
+          }
+        }
+      },
+      "QuoteResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "price": {
+            "type": "number"
+          },
+          "delivery_fee": {
+            "type": "number"
+          },
+          "currency": {
+            "type": "string"
+          },
+          "eta": {
+            "type": "string"
+          },
+          "eta_minutes": {
+            "type": "integer"
+          },
+          "service_id": {
+            "type": "string",
+            "description": "Short service code derived from the suggested vehicle class, such as `bike_std` or `car_std`."
+          },
+          "suggested_vehicle_class": {
+            "type": "string",
+            "enum": [
+              "BIKE",
+              "CAR",
+              "VAN",
+              "TRUCK"
+            ],
+            "description": "The smallest vehicle class whose default capacity fits the required package weight."
+          },
+          "required_weight_kg": {
+            "type": "number",
+            "description": "The weight used for dispatch capacity checks."
+          },
+          "distance_km": {
+            "type": "number"
+          },
+          "environment": {
+            "type": "string",
+            "enum": [
+              "live",
+              "test"
+            ]
+          },
+          "breakdown": {
+            "$ref": "#/components/schemas/PriceBreakdown"
+          }
+        },
+        "required": [
+          "success",
+          "price",
+          "delivery_fee",
+          "currency",
+          "eta",
+          "eta_minutes",
+          "service_id",
+          "suggested_vehicle_class",
+          "required_weight_kg",
+          "distance_km",
+          "environment",
+          "breakdown"
+        ]
+      },
+      "CreateOrderRequest": {
+        "type": "object",
+        "required": [
+          "delivery_address",
+          "receiver_name",
+          "delivery_fee",
+          "delivery_lat",
+          "delivery_lng"
+        ],
+        "properties": {
+          "pickup_address": {
+            "type": "string",
+            "description": "Pickup address. If omitted, the merchant's saved pickup address is used. Legacy alias: `pickupAddress`."
+          },
+          "delivery_address": {
+            "type": "string",
+            "description": "Dropoff address shown to the rider and tracking surfaces. Legacy alias: `deliveryAddress`."
+          },
+          "receiver_name": {
+            "type": "string",
+            "description": "Receiver full name. Legacy aliases still accepted by the backend include `receiverName` and `customer_name`."
+          },
+          "receiver_phone": {
+            "type": "string",
+            "description": "Receiver phone number used for delivery communications. Legacy aliases: `receiverPhone`, `customer_phone`, `recipient_phone`, `recipientPhone`."
+          },
+          "receiver_email": {
+            "type": "string",
+            "format": "email",
+            "description": "Receiver email address if available. Legacy aliases: `receiverEmail`, `customer_email`."
+          },
+          "delivery_fee": {
+            "type": "number",
+            "description": "Amount the merchant intends to charge for the delivery. Canonical field is `delivery_fee`; legacy aliases that may still be accepted include `deliveryFee` and `amount`."
+          },
+          "delivery_lat": {
+            "type": "number",
+            "description": "Destination latitude. Legacy aliases: `deliveryLatitude`, `delivery_latitude`."
+          },
+          "delivery_lng": {
+            "type": "number",
+            "description": "Destination longitude. Legacy aliases: `deliveryLongitude`, `delivery_longitude`."
+          },
+          "pickup_lat": {
+            "type": "number",
+            "description": "Pickup latitude. If omitted, the merchant pickup location is used. Legacy alias: `pickupLatitude`."
+          },
+          "pickup_lng": {
+            "type": "number",
+            "description": "Pickup longitude. If omitted, the merchant pickup location is used. Legacy alias: `pickupLongitude`."
+          },
+          "item_name": {
+            "type": "string",
+            "description": "Human-readable item name shown to the rider. Legacy aliases include `itemName`, `product_name`, and `productName`."
+          },
+          "product_type": {
+            "type": "string",
+            "description": "Product category for reporting and pricing context. Legacy alias: `productType`."
+          },
+          "weight_estimate": {
+            "type": "string",
+            "description": "Weight bucket used for pricing and dispatch. Supported buckets: `0-5kg`, `5-10kg`, `10-20kg`, `20-50kg`, `50kg+`. Legacy alias: `weightEstimate`."
+          },
+          "total_weight_kg": {
+            "type": "number",
+            "description": "Actual package weight. When provided, dispatch and quote logic use the greater of this and the bucket-implied weight."
+          },
+          "dimensions": {
+            "type": "string",
+            "description": "Optional package dimensions as free text."
+          },
+          "special_notes": {
+            "type": "string",
+            "description": "Optional rider instructions. Legacy alias: `specialNotes`."
+          },
+          "declared_value": {
+            "type": "number",
+            "description": "Optional declared item value. Legacy alias: `declaredValue`."
+          },
+          "merchant_reference_id": {
+            "type": "string",
+            "description": "Merchant-side identifier for reconciliation. Legacy alias: `merchantReferenceId`."
+          },
+          "wc_order_id": {
+            "type": "string",
+            "description": "WooCommerce order identifier if the merchant uses a WooCommerce integration. Legacy alias: `wcOrderId`."
+          },
+          "metadata": {
+            "type": "object",
+            "description": "Optional merchant metadata echoed back in the create-order response and webhook payloads.",
+            "additionalProperties": true
+          }
+        }
+      },
+      "CreateOrderResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "tracking_id": {
+            "type": "string"
+          },
+          "order_id": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "tracking_link": {
+            "type": "string"
+          },
+          "delivery_fee": {
+            "type": "number"
+          },
+          "wallet_balance": {
+            "type": "number"
+          },
+          "currency": {
+            "type": "string"
+          },
+          "pickup_address": {
+            "type": "string"
+          },
+          "delivery_address": {
+            "type": "string"
+          },
+          "wc_order_id": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "merchant_reference_id": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "metadata": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "additionalProperties": true
+          },
+          "environment": {
+            "type": "string"
+          },
+          "idempotent_replay": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "success",
+          "tracking_id",
+          "order_id",
+          "status",
+          "tracking_link",
+          "delivery_fee",
+          "wallet_balance",
+          "currency",
+          "pickup_address",
+          "delivery_address",
+          "environment"
+        ]
+      },
+      "OrderSummary": {
+        "type": "object",
+        "properties": {
+          "orderId": {
+            "type": "string"
+          },
+          "trackingNumber": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "pickupAddress": {
+            "type": "string"
+          },
+          "pickupLocation": {
+            "type": "string"
+          },
+          "deliveryAddress": {
+            "type": "string"
+          },
+          "deliveryLocation": {
+            "type": "string"
+          },
+          "dropoffLocation": {
+            "type": "string"
+          },
+          "locationInformation": {
+            "type": "object",
+            "properties": {
+              "pickupLocation": {
+                "type": "string"
+              },
+              "dropoffLocation": {
+                "type": "string"
+              },
+              "pickupCoordinates": {
+                "oneOf": [
+                  {
+                    "$ref": "#/components/schemas/Coordinates"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "dropoffCoordinates": {
+                "oneOf": [
+                  {
+                    "$ref": "#/components/schemas/Coordinates"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            }
+          },
+          "receiverName": {
+            "type": "string"
+          },
+          "receiverPhone": {
+            "type": "string"
+          },
+          "deliveryFee": {
+            "type": "number"
+          },
+          "itemName": {
+            "type": "string"
+          },
+          "environment": {
+            "type": "string"
+          },
+          "merchantReferenceId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "createdAt": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      },
+      "GetOrderResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "order": {
+            "type": "object",
+            "description": "Full order snapshot returned by the backend order serializer.",
+            "additionalProperties": true
+          }
+        },
+        "required": [
+          "success",
+          "order"
+        ]
+      },
+      "ListOrdersResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Pagination"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "success": {
+                "type": "boolean"
+              },
+              "orders": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/OrderSummary"
+                }
+              }
+            },
+            "required": [
+              "success",
+              "orders",
+              "page",
+              "perPage",
+              "totalPages",
+              "totalItems"
+            ]
+          }
+        ]
+      },
+      "CancelOrderResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string"
+          },
+          "order_id": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "wallet_balance": {
+            "type": "number"
+          },
+          "currency": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "success",
+          "message",
+          "order_id",
+          "status",
+          "wallet_balance",
+          "currency"
+        ]
+      },
+      "RiderTracking": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "driver_id": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "name": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "latitude": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "longitude": {
+            "type": [
+              "number",
+              "null"
+            ]
+          }
+        }
+      },
+      "TrackingResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "order_id": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "tracking_url": {
+            "type": "string"
+          },
+          "eta_minutes": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "rider": {
+            "$ref": "#/components/schemas/RiderTracking"
+          }
+        },
+        "required": [
+          "success",
+          "order_id",
+          "status",
+          "tracking_url",
+          "rider"
+        ]
+      },
+      "PodAsset": {
+        "type": "object",
+        "properties": {
+          "image_url": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "signature": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "notes": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      },
+      "PodResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "order_id": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "delivered_at": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "pod": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/PodAsset"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "success",
+          "order_id",
+          "status",
+          "pod",
+          "message"
+        ]
+      },
+      "WalletTransaction": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "amount": {
+            "type": "number"
+          },
+          "type": {
+            "type": "string"
+          },
+          "reference": {
+            "type": "string"
+          },
+          "orderId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "createdAt": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      },
+      "WalletResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Pagination"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "success": {
+                "type": "boolean"
+              },
+              "balance": {
+                "type": "number"
+              },
+              "currency": {
+                "type": "string"
+              },
+              "transactions": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/WalletTransaction"
+                }
+              }
+            },
+            "required": [
+              "success",
+              "balance",
+              "currency",
+              "transactions",
+              "page",
+              "perPage",
+              "totalPages",
+              "totalItems"
+            ]
+          }
+        ]
+      },
+      "SimulateStatusRequest": {
+        "type": "object",
+        "required": [
+          "order_id",
+          "status"
+        ],
+        "properties": {
+          "order_id": {
+            "type": "string",
+            "description": "Order identifier to mutate."
+          },
+          "status": {
+            "type": "string",
+            "description": "New order status such as `In Transit`, `Delivered`, or `Cancelled`."
+          }
+        }
+      },
+      "SimulateStatusResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string"
+          },
+          "order_id": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "event": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "success",
+          "message",
+          "order_id",
+          "status",
+          "event"
+        ]
+      }
+    }
+  }
+}
