@@ -1,4 +1,4 @@
-# Guide: Webhooks
+# Webhooks
 
 Use webhooks to receive order status updates in your backend instead of relying only on polling.
 

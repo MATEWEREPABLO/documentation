@@ -33,19 +33,19 @@
               "docs/guides/external-api-heavy-packages",
               "docs/guides/external-api-errors-and-retries"
             ]
-          },
-          {
-            "group": "Advanced",
-            "pages": [
-              "docs/guides/authentication",
-              "docs/guides/webhooks"
-            ]
           }
         ]
       },
       {
         "tab": "API Reference",
         "groups": [
+          {
+            "group": "Reference Guides",
+            "pages": [
+              "docs/api-reference/authentication",
+              "docs/api-reference/webhooks"
+            ]
+          },
           {
             "group": "Endpoints",
             "api": "api-1.json"

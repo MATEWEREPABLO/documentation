@@ -1,4 +1,4 @@
-# Guide: Authentication
+# Authentication
 
 Authenticate requests with an API key in the `X-API-Key` header.
 
