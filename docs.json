@@ -1,4 +1,13 @@
 {
+  "$schema": "https://mintlify.com/docs.json",
+  "name": "Yonne Deliveries",
+  "theme": "mint",
+  "colors": {
+    "primary": "#16A34A",
+    "light": "#07C983",
+    "dark": "#15803D"
+  },
+  "favicon": "/favicon.svg",
   "navigation": [
     {
       "group": "Getting Started",
@@ -18,5 +27,10 @@
       "group": "API Reference",
       "api": "api-1.json"
     }
-  ]
+  ],
+  "footer": {
+    "socials": {
+      "github": "https://github.com/vendorme"
+    }
+  }
 }
