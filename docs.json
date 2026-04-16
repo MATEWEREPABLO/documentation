@@ -16,15 +16,15 @@
           {
             "group": "Getting Started",
             "pages": [
-              "docs/getting-started-external-api"
+              "getting-started-external-api"
             ]
           },
           {
             "group": "Guides",
             "pages": [
-              "docs/external-api-first-order",
-              "docs/external-api-heavy-packages",
-              "docs/external-api-errors-and-retries"
+              "external-api-first-order",
+              "external-api-heavy-packages",
+              "external-api-errors-and-retries"
             ]
           },
           {
