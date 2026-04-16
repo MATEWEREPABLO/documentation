@@ -8,26 +8,42 @@
     "dark": "#15803D"
   },
   "favicon": "/favicon.svg",
-  "navigation": [
-    {
-      "group": "Getting Started",
-      "pages": [
-        "docs/getting-started-external-api"
-      ]
-    },
-    {
-      "group": "Guides",
-      "pages": [
-        "docs/external-api-first-order",
-        "docs/external-api-heavy-packages",
-        "docs/external-api-errors-and-retries"
-      ]
-    },
-    {
-      "group": "API Reference",
-      "api": "api-1.json"
-    }
-  ],
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Getting Started",
+            "pages": [
+              "docs/getting-started-external-api"
+            ]
+          },
+          {
+            "group": "Guides",
+            "pages": [
+              "docs/external-api-first-order",
+              "docs/external-api-heavy-packages",
+              "docs/external-api-errors-and-retries"
+            ]
+          },
+          {
+            "group": "API Reference",
+            "pages": [
+              {
+                "group": "Endpoints",
+                "api": "api-1.json"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "logo": {
+    "light": "/logo/light.svg",
+    "dark": "/logo/dark.svg"
+  },
   "footer": {
     "socials": {
       "github": "https://github.com/vendorme"
