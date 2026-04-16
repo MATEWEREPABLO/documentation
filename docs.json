@@ -11,30 +11,44 @@
   "navigation": {
     "tabs": [
       {
-        "tab": "Documentation",
+        "tab": "Introduction",
         "groups": [
           {
             "group": "Getting Started",
             "pages": [
-              "getting-started-external-api"
+              "docs/introduction/welcome",
+              "docs/introduction/terminology",
+              "docs/introduction/rate-limiting"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Guides",
+        "groups": [
+          {
+            "group": "Core Workflows",
+            "pages": [
+              "docs/guides/external-api-first-order",
+              "docs/guides/external-api-heavy-packages",
+              "docs/guides/external-api-errors-and-retries"
             ]
           },
           {
-            "group": "Guides",
+            "group": "Advanced",
             "pages": [
-              "external-api-first-order",
-              "external-api-heavy-packages",
-              "external-api-errors-and-retries"
+              "docs/guides/authentication",
+              "docs/guides/webhooks"
             ]
-          },
+          }
+        ]
+      },
+      {
+        "tab": "API Reference",
+        "groups": [
           {
-            "group": "API Reference",
-            "pages": [
-              {
-                "group": "Endpoints",
-                "api": "api-1.json"
-              }
-            ]
+            "group": "Endpoints",
+            "api": "api-1.json"
           }
         ]
       }
