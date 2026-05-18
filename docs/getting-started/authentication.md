@@ -106,5 +106,5 @@ Same HTTP status, same error shape. Check that the key is copied correctly from 
 
 - Store your key in an environment variable, never in source code.
 - Use your `yonne_test_` key in local development and CI.
-- Rotate your `yonne_live_` key immediately if it is exposed.
+- Rotate your `yonne_live_` key immediately if it is exposed — do this from [merchant.yonne.app](https://merchant.yonne.app).
 - Never log the full key — log only the prefix (e.g. `yonne_live_***`) if you need a reference in your logs.

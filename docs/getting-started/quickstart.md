@@ -8,7 +8,7 @@ description: "Make your first Yonne API call in under 5 minutes. You'll validate
 You'll need a Yonne API key. Use a `yonne_test_` key while building — it behaves identically to production without affecting your live wallet.
 
 <Note>
-  Get your API key from the [Yonne merchant dashboard](https://yonne.app/dashboard). If you don't have an account yet, sign up there first.
+  Get your API key from [merchant.yonne.app](https://merchant.yonne.app). If you don't have an account yet, sign up there first.
 </Note>
 
 ---
@@ -65,7 +65,11 @@ print(response.json())
 
 ## Step 2 — Get a delivery quote
 
-Call `/quote` with the customer's delivery coordinates to get a real-time fee and ETA.
+Yonne calculates the delivery fee based on the distance between your pickup location and the customer's exact delivery coordinates. Your frontend must request the customer's location using the browser Geolocation API and pass those coordinates to your server, which then calls `/quote`.
+
+<Note>
+  A typed address alone is not enough — Yonne requires `delivery_lat` and `delivery_lng`. Use the browser Geolocation API or a geocoding service to convert addresses to coordinates before calling `/quote`.
+</Note>
 
 <CodeGroup>
 ```bash cURL

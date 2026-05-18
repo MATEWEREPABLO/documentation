@@ -5,7 +5,7 @@ description: "A step-by-step guide to integrating Yonne delivery fees and order 
 
 # E-commerce Checkout Integration
 
-This guide walks you through the exact sequence of API calls needed to add Yonne delivery to your checkout flow — from displaying a real-time fee to the customer, to dispatching a rider the moment they pay.
+This guide walks you through the exact sequence of API calls needed to add Yonne delivery to your checkout — from capturing the customer's location and displaying a real-time fee, to dispatching a rider the moment they pay.
 
 ---
 
@@ -22,8 +22,8 @@ Customer adds item to cart
            │
            ▼
 ┌─────────────────────────┐
-│  Step 2: QUOTE          │  When customer enters delivery address
-│  POST /quote            │  Get delivery_fee + ETA for the cart
+│  Step 2: QUOTE          │  Request customer location via browser
+│  POST /quote            │  Geolocation API → get delivery_fee + ETA
 └──────────┬──────────────┘
            │
            ▼
@@ -115,9 +115,28 @@ pickup_coords = {
 
 ---
 
-## Step 2 — Quote the delivery fee at checkout
+## Step 2 — Capture the customer's location, then quote
 
-Call `POST /api/v1/external/quote` as soon as the customer enters their delivery address. Display the returned `delivery_fee` and `eta` on the checkout page.
+Yonne calculates the delivery fee based on the real distance between your pickup point and the customer's location. A typed address is not sufficient — you must send precise GPS coordinates (`delivery_lat`, `delivery_lng`).
+
+**Get the customer's coordinates first**, using the browser Geolocation API on your frontend:
+
+```javascript
+// Frontend — request browser location, then POST to your own checkout API
+navigator.geolocation.getCurrentPosition(
+  (position) => {
+    const { latitude, longitude } = position.coords;
+    fetchDeliveryQuote(latitude, longitude);
+  },
+  (error) => {
+    // Fall back to asking the customer to enter coordinates manually,
+    // or use a geocoding service to convert a typed address to lat/lng
+    console.error("Location access denied:", error.message);
+  }
+);
+```
+
+Once you have the coordinates, call `POST /api/v1/external/quote` from your server and display the returned `delivery_fee` and `eta` on the checkout page.
 
 <CodeGroup>
 ```bash cURL
@@ -403,6 +422,7 @@ From this point, Yonne will push status updates to your webhook endpoint as the 
 Before going live with this flow:
 
 - [ ] `GET /validate` is called on startup and `hasPickup` is confirmed
+- [ ] Customer location is collected via the browser Geolocation API (or geocoding) before calling `/quote`
 - [ ] `delivery_fee` from the quote is passed unchanged into create-order (not recalculated)
 - [ ] `Idempotency-Key` is generated from your internal order ID on every create-order call
 - [ ] `order_id` and `tracking_id` are saved to your database

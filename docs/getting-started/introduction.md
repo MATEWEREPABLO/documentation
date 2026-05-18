@@ -5,7 +5,11 @@ description: "Yonne gives your application a single API to quote delivery fees, 
 
 # What is Yonne Deliveries?
 
-Yonne is a last-mile delivery platform. You integrate once, and your customers get live delivery fees at checkout, automatic rider dispatch when they pay, and a real-time tracking link the moment the order is confirmed.
+Yonne is a last-mile delivery platform. Integrate once and your customers get live delivery fees at checkout, automatic rider dispatch when they pay, and a real-time tracking link the moment the order is confirmed.
+
+<Note>
+  Don't have a merchant account yet? Sign up or log in at [merchant.yonne.app](https://merchant.yonne.app).
+</Note>
 
 ---
 
@@ -20,8 +24,9 @@ Every integration follows the same sequence. Understanding this flow end-to-end 
 │           address is configured before doing anything else.     │
 ├─────────────────────────────────────────────────────────────────┤
 │  Step 2 › Quote             POST /api/v1/external/quote         │
-│           Call this at checkout to get a real-time delivery_fee │
-│           and the suggested_vehicle_class for your shipment.    │
+│           Request the customer's location via the browser       │
+│           Geolocation API, then send the coordinates to get a   │
+│           real-time delivery_fee and suggested_vehicle_class.   │
 ├─────────────────────────────────────────────────────────────────┤
 │  Step 3 › Collect Payment   (your checkout logic)               │
 │           The customer pays on your platform. Hold the          │
