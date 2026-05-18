@@ -3,7 +3,7 @@ title: "What is Yonne Deliveries?"
 description: "Yonne gives your application a single API to quote delivery fees, dispatch riders, and track shipments in real time across Malawi."
 ---
 
-# What is Yonne Deliveries?
+## Overview
 
 Yonne is a last-mile delivery platform. Integrate once and your customers get live delivery fees at checkout, automatic rider dispatch when they pay, and a real-time tracking link the moment the order is confirmed.
 
