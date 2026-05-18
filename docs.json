@@ -11,27 +11,54 @@
   "navigation": {
     "tabs": [
       {
-        "tab": "Introduction",
+        "tab": "Getting Started",
         "groups": [
           {
             "group": "Getting Started",
             "pages": [
-              "docs/introduction/welcome",
-              "docs/introduction/terminology",
-              "docs/introduction/rate-limiting"
+              "docs/getting-started/introduction",
+              "docs/getting-started/quickstart",
+              "docs/getting-started/authentication",
+              "docs/getting-started/environments"
             ]
           }
         ]
       },
       {
-        "tab": "Guides",
+        "tab": "Core Concepts",
         "groups": [
           {
-            "group": "Platform behavior",
+            "group": "Core Concepts",
             "pages": [
-              "docs/guides/external-api-heavy-packages",
-              "docs/guides/external-api-errors-and-retries",
-              "docs/guides/external-api-test-vs-live"
+              "docs/core-concepts/idempotency-and-retries",
+              "docs/core-concepts/capacity-and-weight",
+              "docs/core-concepts/rate-limiting",
+              "docs/core-concepts/errors"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Integration Workflows",
+        "groups": [
+          {
+            "group": "Integration Workflows",
+            "pages": [
+              "docs/integration-workflows/ecommerce-checkout",
+              "docs/integration-workflows/real-time-tracking",
+              "docs/integration-workflows/wallet-management"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Webhooks",
+        "groups": [
+          {
+            "group": "Webhooks",
+            "pages": [
+              "docs/webhooks/setup-and-security",
+              "docs/webhooks/event-catalog"
             ]
           }
         ]
@@ -39,15 +66,6 @@
       {
         "tab": "API Reference",
         "groups": [
-          {
-            "group": "Core reference",
-            "pages": [
-              "docs/api-reference/overview",
-              "docs/api-reference/authentication",
-              "docs/api-reference/webhooks",
-              "docs/api-reference/error-catalog"
-            ]
-          },
           {
             "group": "Endpoints",
             "api": "api-1.json"

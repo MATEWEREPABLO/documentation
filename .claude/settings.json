@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(Get-Content \"c:\\\\Users\\\\DAVID\\\\Downloads\\\\well-known\\\\documentation\\\\docs\\\\introduction\\\\welcome.md\")",
+      "Bash(Get-Content \"c:\\\\Users\\\\DAVID\\\\Downloads\\\\well-known\\\\documentation\\\\docs\\\\introduction\\\\terminology.md\")",
+      "Bash(Get-Content \"c:\\\\Users\\\\DAVID\\\\Downloads\\\\well-known\\\\documentation\\\\docs\\\\introduction\\\\rate-limiting.md\")"
+    ]
+  }
+}
