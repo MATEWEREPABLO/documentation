@@ -3,8 +3,6 @@ title: "Webhook Setup & Security"
 description: "Configure your Yonne webhook endpoint and verify every payload with HMAC-SHA256 signature validation."
 ---
 
-# Webhook Setup & Security
-
 Yonne delivers real-time order status updates to your server via webhooks. Every payload is signed with HMAC-SHA256 — you must verify the signature on every request to ensure the payload came from Yonne and hasn't been tampered with.
 
 ---

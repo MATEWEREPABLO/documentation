@@ -3,8 +3,6 @@ title: "Idempotency & Retries"
 description: "Use Idempotency-Key on every create-order call to prevent duplicate orders when networks fail or requests time out."
 ---
 
-# Idempotency & Retries
-
 Networks fail. Clients time out. Users double-click checkout buttons. The `Idempotency-Key` header is how you guarantee that no matter how many times you retry a request, Yonne creates the order exactly once.
 
 ---

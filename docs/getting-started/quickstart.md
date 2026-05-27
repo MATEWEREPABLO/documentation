@@ -3,8 +3,6 @@ title: "Quickstart"
 description: "Make your first Yonne API call in under 5 minutes. You'll validate your key, get a delivery quote, and create a test order."
 ---
 
-# Quickstart
-
 You'll need a Yonne API key. Use a `yonne_test_` key while building — it behaves identically to production without affecting your live wallet.
 
 <Note>

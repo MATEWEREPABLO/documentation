@@ -3,8 +3,6 @@ title: "E-commerce Checkout Integration"
 description: "A step-by-step guide to integrating Yonne delivery fees and order dispatch into your e-commerce checkout flow."
 ---
 
-# E-commerce Checkout Integration
-
 This guide walks you through the exact sequence of API calls needed to add Yonne delivery to your checkout — from capturing the customer's location and displaying a real-time fee, to dispatching a rider the moment they pay.
 
 ---

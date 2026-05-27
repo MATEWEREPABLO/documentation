@@ -3,8 +3,6 @@ title: "Error Catalog"
 description: "Every Yonne error code, what causes it, and exactly what to do next."
 ---
 
-# Error Catalog
-
 All Yonne error responses follow this shape:
 
 ```json

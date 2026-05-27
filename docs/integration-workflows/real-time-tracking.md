@@ -3,8 +3,6 @@ title: "Real-time Tracking"
 description: "Use Tracking IDs and webhooks to show customers live delivery status without polling."
 ---
 
-# Real-time Tracking
-
 After an order is created, Yonne provides two mechanisms to track it: a **tracking link** you surface to customers, and **webhooks** that push status changes to your backend in real time.
 
 ---

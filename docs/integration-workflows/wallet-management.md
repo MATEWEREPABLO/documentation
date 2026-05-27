@@ -3,8 +3,6 @@ title: "Wallet Management"
 description: "Check your Yonne wallet balance, handle 402 Insufficient Funds errors gracefully, and build a top-up flow that unblocks dispatches automatically."
 ---
 
-# Wallet Management
-
 Yonne deducts the `delivery_fee` from your merchant wallet when each order is created. If your balance drops below the fee for a delivery, the create-order call fails with `402 Insufficient Funds`. This guide shows you how to check balance, respond to that error, and build a proactive top-up workflow.
 
 ---

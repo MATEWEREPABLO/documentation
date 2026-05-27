@@ -3,8 +3,6 @@ title: "Event Catalog"
 description: "Every webhook event Yonne sends, with full payload examples for each."
 ---
 
-# Event Catalog
-
 Yonne sends a signed HTTP `POST` to your registered webhook URL whenever an order changes state. This page lists every event type and shows the exact payload shape you'll receive.
 
 See [Webhook Setup & Security](/docs/webhooks/setup-and-security) for how to register your endpoint and verify signatures.

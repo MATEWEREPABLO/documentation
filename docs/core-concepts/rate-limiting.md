@@ -3,8 +3,6 @@ title: "Rate Limiting"
 description: "Yonne enforces rate limits to protect platform stability. Use exponential backoff and avoid polling when webhooks can do the job."
 ---
 
-# Rate Limiting
-
 Yonne enforces rate limits across all merchants to maintain platform stability. Design your integration to send predictable, controlled traffic.
 
 ---

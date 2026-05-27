@@ -3,8 +3,6 @@ title: "Capacity & Weight"
 description: "Understand how Yonne selects vehicle classes based on shipment weight, and why ERR_NO_CAPACITY_AVAILABLE happens."
 ---
 
-# Capacity & Weight
-
 Yonne uses **capacity-qualified dispatch** — the platform does not simply assign the nearest rider. It first filters the rider pool by vehicle capacity to ensure your shipment can actually be carried.
 
 ---

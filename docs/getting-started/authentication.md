@@ -3,8 +3,6 @@ title: "Authentication"
 description: "Authenticate every Yonne API request using your API key in the X-API-Key header."
 ---
 
-# Authentication
-
 Every request to the Yonne API must include your API key. There is no OAuth flow — your key is your credential.
 
 ---

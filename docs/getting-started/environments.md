@@ -3,8 +3,6 @@ title: "Environments"
 description: "Yonne has two environments — test and live — selected by your API key prefix. The host is identical for both."
 ---
 
-# Environments
-
 Yonne uses a single API host for both environments:
 
 ```text
