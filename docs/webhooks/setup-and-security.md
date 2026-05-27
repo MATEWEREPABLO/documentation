@@ -5,32 +5,102 @@ description: "Configure your Yonne webhook endpoint and verify every payload wit
 
 # Webhook Setup & Security
 
-Yonne delivers order status updates to your server via webhooks. Every payload is signed with HMAC-SHA256 — you must verify the signature on every request to ensure the payload came from Yonne and hasn't been tampered with.
+Yonne delivers real-time order status updates to your server via webhooks. Every payload is signed with HMAC-SHA256 — you must verify the signature on every request to ensure the payload came from Yonne and hasn't been tampered with.
+
+---
+
+## Overview
+
+Rather than polling the Yonne API for order status changes, webhooks let Yonne push updates to your server the moment something happens. This enables:
+
+- **Real-time order tracking** — update your OMS as soon as a driver is assigned or an order is delivered.
+- **Automated customer notifications** — send SMS or email confirmations without polling.
+- **Fulfilment automation** — trigger warehouse or logistics workflows the instant an order changes state.
 
 ---
 
 ## Setting up your endpoint
 
-1. Build an HTTP `POST` endpoint on your server (e.g. `https://yourapp.com/webhooks/yonne`).
-2. Register the URL in your Yonne merchant dashboard.
-3. Copy the **webhook secret** shown in the dashboard — you'll use it to verify signatures.
-4. Return `200 OK` for every valid request, even if you've already processed it.
+### 1. Configure your webhook URL and secret
 
-Your endpoint must be reachable from the public internet. Yonne does not support localhost endpoints in production — use a tunnel like ngrok during development.
+In your **Yonne merchant dashboard**, navigate to **Settings → Webhooks** and fill in two fields:
+
+| Field | Description |
+|---|---|
+| `webhook_url` | Your publicly reachable HTTPS endpoint that accepts `POST` requests (e.g. `https://yourapp.com/webhooks/yonne`) |
+| `webhook_secret` | A secret string shared between Yonne and your server, used to sign and verify every request |
+
+> **No `webhook_url`, no webhooks.** If this field is not set for your merchant account, Yonne will not send any webhook notifications for your orders.
+
+### 2. Expose your endpoint
+
+Your endpoint must be reachable from the public internet. During development, use a tunnelling tool to expose your local server:
+
+```bash
+ngrok http 3000
+# Register https://abc123.ngrok.io/webhooks/yonne in your dashboard
+```
+
+### 3. Respond with `200 OK` within 10 seconds
+
+Yonne considers any response outside the 10-second window as a failure and will schedule a retry. Return `200` as fast as possible and process the event asynchronously (see [Best Practices](#best-practices)).
+
+---
+
+## The webhook payload
+
+Every event uses the same envelope structure:
+
+```json
+{
+  "event": "order.driver_assigned",
+  "created_at": "2026-05-26T14:30:00.000Z",
+  "data": {
+    "order_id": "ORD123456",
+    "tracking_number": "YON-ABC123",
+    "tracking_url": "https://yonne.app/track/YON-ABC123",
+    "status": "Awaiting Acceptance",
+    "environment": "live",
+    "delivery_fee": 3500.0,
+    "pickup_address": "Area 18, Lilongwe",
+    "delivery_address": "Area 3, Lilongwe",
+    "receiver_name": "John Doe",
+    "merchant_reference_id": "your-internal-order-id",
+    "metadata": {},
+    "courier": {
+      "driver_name": "James Banda",
+      "driver_phone": "+265991234567",
+      "vehicle_type": "BIKE"
+    }
+  }
+}
+```
+
+### Key fields
+
+| Field | Description |
+|---|---|
+| `event` | The event type that triggered this delivery (see [Event Catalog](/docs/webhooks/event-catalog)) |
+| `created_at` | ISO 8601 timestamp of when the event occurred |
+| `data.order_id` | Yonne's internal order identifier |
+| `data.merchant_reference_id` | **Your own order ID**, echoed back from the `create-order` call — use this to look up the order in your system |
+| `data.tracking_url` | A public link you can forward directly to your customer so they can track their rider in real time |
+| `data.courier` | Driver details — `null` for events that fire before a driver is assigned (e.g. `order.failed`) |
+| `data.metadata` | Any custom key/value object you attached to the order at creation time, echoed back |
 
 ---
 
 ## The signature header
 
-Yonne signs every webhook payload and sends the signature in the `X-Yonne-Signature` header:
+Yonne signs every webhook request and includes the signature in the `X-Yonne-Signature` header:
 
 ```http
 POST /webhooks/yonne HTTP/1.1
 Content-Type: application/json
-X-Yonne-Signature: sha256=3d2f5e...
+X-Yonne-Signature: 3b4f2c1d8e...
 ```
 
-The value is `sha256=` followed by the HMAC-SHA256 hex digest of the raw request body, computed using your webhook secret as the key.
+The value is the HMAC-SHA256 hex digest of the **raw request body**, computed using your `webhook_secret` as the key.
 
 ---
 
@@ -38,37 +108,48 @@ The value is `sha256=` followed by the HMAC-SHA256 hex digest of the raw request
 
 **Always verify the signature before processing the payload.** Reject any request where the signature does not match.
 
+> **Critical: read raw bytes first.** Compute the HMAC over the exact raw bytes Yonne sent. If you parse the JSON body first and then re-serialize it, the byte sequence will differ and the signature will never match — even for legitimate requests.
+
 <CodeGroup>
 ```javascript Node.js (Express)
-const crypto = require("crypto");
+const crypto = require('crypto');
 
-function verifyYonneSignature(req, secret) {
-  const signature = req.headers["x-yonne-signature"];
-  if (!signature) return false;
+app.post('/webhooks/yonne', express.raw({ type: 'application/json' }), (req, res) => {
+  const signature = req.headers['x-yonne-signature'];
+  const expected = crypto
+    .createHmac('sha256', process.env.YONNE_WEBHOOK_SECRET)
+    .update(req.body) // req.body must be a raw Buffer — use express.raw(), not express.json()
+    .digest('hex');
 
-  const expected = "sha256=" + crypto
-    .createHmac("sha256", secret)
-    .update(req.rawBody) // must be the raw Buffer, not parsed JSON
-    .digest("hex");
-
-  return crypto.timingSafeEqual(
-    Buffer.from(signature),
-    Buffer.from(expected)
-  );
-}
-
-// Express webhook route — use express.raw() to preserve the raw body
-app.post("/webhooks/yonne", express.raw({ type: "application/json" }), (req, res) => {
-  const secret = process.env.YONNE_WEBHOOK_SECRET;
-
-  if (!verifyYonneSignature(req, secret)) {
-    return res.status(401).json({ error: "Invalid signature" });
+  if (!crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expected))) {
+    return res.status(401).json({ error: 'Invalid signature' });
   }
 
   const event = JSON.parse(req.body);
-  handleWebhookEvent(event);
-  res.status(200).json({ received: true });
+
+  // Acknowledge immediately, process asynchronously
+  res.status(200).send('OK');
+  processEventAsync(event);
 });
+```
+
+```php PHP
+<?php
+$rawBody = file_get_contents('php://input');
+$signature = $_SERVER['HTTP_X_YONNE_SIGNATURE'] ?? '';
+$expected = hash_hmac('sha256', $rawBody, $_ENV['YONNE_WEBHOOK_SECRET']);
+
+if (!hash_equals($expected, $signature)) {
+    http_response_code(401);
+    exit('Invalid signature');
+}
+
+$event = json_decode($rawBody, true);
+
+// Acknowledge immediately, process asynchronously
+http_response_code(200);
+echo 'OK';
+processEventAsync($event);
 ```
 
 ```python Python (Flask)
@@ -79,128 +160,91 @@ from flask import Flask, request, jsonify
 
 app = Flask(__name__)
 
-def verify_yonne_signature(payload_bytes, signature_header, secret):
-    if not signature_header:
-        return False
-    expected = "sha256=" + hmac.new(
-        secret.encode("utf-8"),
-        payload_bytes,
+@app.route('/webhooks/yonne', methods=['POST'])
+def webhook():
+    raw_body = request.get_data()  # raw bytes — do NOT use request.json here
+    signature = request.headers.get('X-Yonne-Signature', '')
+    expected = hmac.new(
+        os.environ['YONNE_WEBHOOK_SECRET'].encode('utf-8'),
+        raw_body,
         hashlib.sha256
     ).hexdigest()
-    return hmac.compare_digest(expected, signature_header)
 
-@app.route("/webhooks/yonne", methods=["POST"])
-def yonne_webhook():
-    secret = os.environ["YONNE_WEBHOOK_SECRET"]
-    signature = request.headers.get("X-Yonne-Signature", "")
+    if not hmac.compare_digest(signature, expected):
+        return {'error': 'Invalid signature'}, 401
 
-    if not verify_yonne_signature(request.data, signature, secret):
-        return jsonify({"error": "Invalid signature"}), 401
+    event = request.get_json(force=True)
 
-    event = request.get_json()
-    handle_webhook_event(event)
-    return jsonify({"received": True}), 200
+    # Acknowledge immediately, process asynchronously
+    process_event_async(event)
+    return {'ok': True}, 200
 ```
 </CodeGroup>
 
-<Warning>
-  Always use a constant-time comparison (`timingSafeEqual` / `hmac.compare_digest`) when comparing signatures. A regular string equality check is vulnerable to timing attacks.
-</Warning>
+> **Use constant-time comparison.** Always use `timingSafeEqual` (Node.js) or `hmac.compare_digest` (Python) / `hash_equals` (PHP) when comparing signatures. A regular string equality check is vulnerable to timing attacks.
 
 ---
 
-## Processing the event
+## Best practices
 
-After verifying the signature, parse and handle the event:
+### Fast ACKs — respond immediately, process asynchronously
 
-<CodeGroup>
-```javascript Node.js
-async function handleWebhookEvent(event) {
-  switch (event.event) {
-    case "order.status_updated":
-      await db.orders.updateStatus(event.order_id, event.status);
-      if (event.status === "delivered") {
-        await notifications.sendDeliveryConfirmation(event.order_id);
-      }
-      break;
+Your endpoint must return any `2xx` status code within **10 seconds**. Yonne does not use the response body. If your processing logic (database writes, sending notifications, calling third-party APIs) might take longer, acknowledge first and do the work in a background job:
 
-    case "order.cancelled":
-      await db.orders.markCancelled(event.order_id);
-      break;
+```javascript
+app.post('/webhooks/yonne', express.raw({ type: 'application/json' }), (req, res) => {
+  // ... verify signature ...
 
-    default:
-      console.log("Unhandled event type:", event.event);
-  }
-}
-```
-
-```python Python
-def handle_webhook_event(event):
-    if event["event"] == "order.status_updated":
-        db.orders.update_status(event["order_id"], event["status"])
-        if event["status"] == "delivered":
-            notifications.send_delivery_confirmation(event["order_id"])
-
-    elif event["event"] == "order.cancelled":
-        db.orders.mark_cancelled(event["order_id"])
-
-    else:
-        print(f"Unhandled event: {event['event']}")
-```
-</CodeGroup>
-
----
-
-## Idempotent webhook processing
-
-Yonne may deliver the same event more than once due to network retries or internal replay. Your handler must be idempotent — processing the same event twice should have no side effects.
-
-Use the combination of `order_id` + `event` + `status` as a deduplication key:
-
-```javascript Node.js
-// Skip if already processed
-const alreadyProcessed = await db.webhookEvents.exists({
-  order_id: event.order_id,
-  event: event.event,
-  status: event.status
+  res.status(200).send('OK'); // acknowledge fast
+  processEventAsync(JSON.parse(req.body)); // do your work after
 });
+```
 
-if (alreadyProcessed) {
-  return; // Safe to skip
+### Idempotency — handle duplicates gracefully
+
+The same event can be delivered more than once (e.g. if your server returned `200` but the network dropped before Yonne received the response). Use the combination of `order_id` + `event` as a deduplication key:
+
+```javascript
+const key = `${event.data.order_id}:${event.event}`;
+
+if (await alreadyProcessed(key)) {
+  return; // safe to skip — already handled
 }
 
-await db.webhookEvents.insert({ order_id: event.order_id, event: event.event, status: event.status });
+await markAsProcessed(key);
 // ... process the event
 ```
 
 ---
 
-## Responding correctly
+## Delivery guarantees & retries
 
-| Response | Meaning |
+Yonne guarantees at-least-once delivery. If your endpoint is unavailable or returns a non-`2xx` status, Yonne will retry with exponential backoff:
+
+| Attempt | Delay after failure |
 |---|---|
-| `200 OK` | Event received and processed (or safely skipped) |
-| `401` | Signature invalid — Yonne will log but may retry |
-| `5xx` | Processing failed — Yonne will retry |
+| 1st retry | 1 minute |
+| 2nd retry | 15 minutes |
+| 3rd retry | 60 minutes |
+| After 3rd failure | Marked `failed` — no further retries |
 
-Always return `200` for duplicate events you've already processed. If you return a non-2xx status, Yonne treats it as a failure and will retry.
+| Scenario | What happens |
+|---|---|
+| Your endpoint returns `2xx` | Marked `delivered` — no retries |
+| Your endpoint returns `4xx` / `5xx` | Retried up to 3 times with backoff |
+| Your endpoint times out (> 10 s) | Treated as failure — retried |
+| Yonne server restarts mid-delivery | Event stays `pending` in the database and is picked up on the next scheduler tick |
+| All 3 retries exhausted | Marked `failed` — visible in your webhook event log for manual inspection |
 
 ---
 
 ## Testing your handler in development
 
-Use the simulate-status endpoint with your test key to trigger webhook deliveries without waiting for a real rider:
+Use the simulate-status endpoint with your test API key to trigger webhook deliveries without waiting for a real rider:
 
 ```bash
 curl --request POST "https://api.yonne.app/api/v1/external/test/simulate-status" \
   --header "X-API-Key: yonne_test_xxxxxxxxx" \
   --header "Content-Type: application/json" \
   --data '{ "order_id": "ORD-123456", "status": "In Transit" }'
-```
-
-Use [ngrok](https://ngrok.com) to expose your local server during development:
-
-```bash
-ngrok http 3000
-# Then register https://abc123.ngrok.io/webhooks/yonne in your dashboard
 ```
