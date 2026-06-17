@@ -1,9 +1,9 @@
 ---
 title: "Courier S2S Integration"
-description: "Connect your logistics system directly to Intercity using server-to-server API calls — no browser, no dashboard login required."
+description: "Connect your logistics system directly to Yonne using server-to-server API calls — no browser, no dashboard login required."
 ---
 
-The S2S (server-to-server) integration lets your courier company's backend talk directly to the Intercity platform. You can update driver availability, pull delivery metrics, and retrieve financial summaries entirely through API calls.
+The S2S (server-to-server) integration lets your courier company's backend talk directly to the Yonne platform. You can update driver availability, pull delivery metrics, and retrieve financial summaries entirely through API calls.
 
 <Note>
   This is a separate integration from the Merchant API. S2S credentials, base paths, and authentication flow are all different. Do not mix them.
@@ -15,7 +15,7 @@ The S2S (server-to-server) integration lets your courier company's backend talk 
 
 There are two actors in this system:
 
-- **Intercity admin** — manages your credentials (generate, rotate, revoke, enable).
+- **Yonne admin** — manages your credentials (generate, rotate, revoke, enable).
 - **Your system** — exchanges credentials for a short-lived JWT, then calls S2S endpoints with that token.
 
 ```
@@ -35,7 +35,7 @@ Platform validates JWT → checks integration is enabled → serves response
 
 ## Before your first call
 
-The Intercity admin must complete these steps before your system can authenticate:
+The Yonne admin must complete these steps before your system can authenticate:
 
 | Step | Who does it | What happens |
 |---|---|---|

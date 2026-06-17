@@ -1,9 +1,9 @@
 ---
 title: "Admin Operations"
-description: "How Intercity admins generate, enable, rotate, and revoke S2S credentials for a courier company."
+description: "How Yonne admins generate, enable, rotate, and revoke S2S credentials for a courier company."
 ---
 
-All credential management is performed by Intercity admin staff — not by the courier's system. This page documents the full lifecycle so courier engineering teams understand what to expect and what to ask for.
+All credential management is performed by Yonne admin staff — not by the courier's system. This page documents the full lifecycle so courier engineering teams understand what to expect and what to ask for.
 
 ---
 
@@ -91,7 +91,7 @@ Rotation requires OTP verification. It:
 - Preserves the existing webhook URL.
 
 **What your team needs to do after a rotate:**
-1. Receive the new credentials from the Intercity admin.
+1. Receive the new credentials from the Yonne admin.
 2. Update `COURIER_API_KEY` and `COURIER_API_SECRET` in your environment variables.
 3. Restart or redeploy your service so the new credentials take effect.
 4. Verify by calling `/api/courier/s2s/auth/token` — a successful response confirms the new credentials are working.
@@ -149,7 +149,7 @@ The `api_key` is returned redacted (first 8 + last 4 characters).
 PUT /admin/couriers/{courier_id}/s2s/webhook
 ```
 
-Sets the URL where Intercity will deliver webhook events for this courier. The `webhook_secret` (generated with credentials) is used to sign payloads — verify it on your end using HMAC.
+Sets the URL where Yonne will deliver webhook events for this courier. The `webhook_secret` (generated with credentials) is used to sign payloads — verify it on your end using HMAC.
 
 ---
 

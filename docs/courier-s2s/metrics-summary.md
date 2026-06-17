@@ -148,7 +148,7 @@ response = requests.get(
 |---|---|
 | `gross_delivery_value` | Total value of all deliveries billed to customers |
 | `courier_earnings` | Your net earnings after platform fees |
-| `platform_fees` | Intercity's fee deducted from gross value |
+| `platform_fees` | Yonne's fee deducted from gross value |
 | `total_withdrawn` | Amount already withdrawn from your account |
 | `average_delivery_value` | Average delivery value per completed order |
 

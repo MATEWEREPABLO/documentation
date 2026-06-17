@@ -6,7 +6,7 @@ description: "Exchange your api_key and api_secret for a short-lived JWT, then a
 S2S authentication is a two-step process: exchange your credentials for a JWT, then attach that JWT as a Bearer token on every subsequent request.
 
 <Note>
-  Your `api_key` and `api_secret` are shown **once** when the Intercity admin generates them. Store them securely in environment variables immediately — they cannot be retrieved again (only regenerated via rotate).
+  Your `api_key` and `api_secret` are shown **once** when the Yonne admin generates them. Store them securely in environment variables immediately — they cannot be retrieved again (only regenerated via rotate).
 </Note>
 
 ---
@@ -153,10 +153,10 @@ async function getToken() {
 | `TOKEN_MISSING` | 401 | No `Authorization` header | Add `Authorization: Bearer <token>` to your request |
 | `TOKEN_EXPIRED` | 401 | Token is older than 24 hours | Re-authenticate to get a fresh token |
 | `TOKEN_INVALID` | 401 | Bad signature or wrong token type | Ensure you're using a token from `/api/courier/s2s/auth/token` |
-| `COURIER_NOT_FOUND` | 404 | The `courier_id` in the token no longer exists | Contact Intercity support |
-| `S2S_DISABLED` | 403 | Integration has been disabled by admin | Contact your Intercity account manager |
+| `COURIER_NOT_FOUND` | 404 | The `courier_id` in the token no longer exists | Contact Yonne support |
+| `S2S_DISABLED` | 403 | Integration has been disabled by admin | Contact your Yonne account manager |
 | `DB_ERROR` | 503 | Platform database unreachable | Retry with exponential backoff |
 
 <Warning>
-  A `403 S2S_DISABLED` response means your integration was turned off on the admin side. Your credentials are still intact — the Intercity admin just needs to re-enable the integration via toggle.
+  A `403 S2S_DISABLED` response means your integration was turned off on the admin side. Your credentials are still intact — the Yonne admin just needs to re-enable the integration via toggle.
 </Warning>

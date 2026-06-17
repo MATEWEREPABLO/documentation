@@ -3,7 +3,7 @@ title: "Update Driver Status"
 description: "Mark a driver as externally busy or available so the platform dispatch algorithm can account for your own assignments."
 ---
 
-When your system assigns a driver to a job outside of the Intercity platform, use this endpoint to mark them as busy. Intercity will skip that driver during dispatch until you mark them available again.
+When your system assigns a driver to a job outside of the Yonne platform, use this endpoint to mark them as busy. Yonne will skip that driver during dispatch until you mark them available again.
 
 ---
 
@@ -144,8 +144,8 @@ def mark_driver_available(rider_id, token):
 
 | S2S value | Internal status | Effect on dispatch |
 |---|---|---|
-| `busy_external` | `busy` | Driver is skipped during Intercity dispatch |
-| `available` | `active` | Driver is eligible for Intercity dispatch |
+| `busy_external` | `busy` | Driver is skipped during Yonne dispatch |
+| `available` | `active` | Driver is eligible for Yonne dispatch |
 
 <Note>
   The response returns the internal `status` value (`"busy"` or `"active"`), not the S2S value you sent. This is expected.
@@ -155,4 +155,4 @@ def mark_driver_available(rider_id, token):
 
 ## When to use `external_reference`
 
-If your system has a job ID for the external assignment (e.g. `"EXT-456"`), pass it as `external_reference`. Intercity stores it against the driver record — this helps admin staff cross-reference jobs when investigating driver availability issues.
+If your system has a job ID for the external assignment (e.g. `"EXT-456"`), pass it as `external_reference`. Yonne stores it against the driver record — this helps admin staff cross-reference jobs when investigating driver availability issues.
