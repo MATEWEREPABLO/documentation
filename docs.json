@@ -64,6 +64,31 @@
         ]
       },
       {
+        "tab": "Courier S2S",
+        "groups": [
+          {
+            "group": "Getting Started",
+            "pages": [
+              "docs/courier-s2s/overview",
+              "docs/courier-s2s/authentication"
+            ]
+          },
+          {
+            "group": "Endpoints",
+            "pages": [
+              "docs/courier-s2s/update-driver-status",
+              "docs/courier-s2s/metrics-summary"
+            ]
+          },
+          {
+            "group": "Admin",
+            "pages": [
+              "docs/courier-s2s/admin-operations"
+            ]
+          }
+        ]
+      },
+      {
         "tab": "API Reference",
         "groups": [
           {

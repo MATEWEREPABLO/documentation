@@ -3,7 +3,11 @@
     "allow": [
       "Bash(Get-Content \"c:\\\\Users\\\\DAVID\\\\Downloads\\\\well-known\\\\documentation\\\\docs\\\\introduction\\\\welcome.md\")",
       "Bash(Get-Content \"c:\\\\Users\\\\DAVID\\\\Downloads\\\\well-known\\\\documentation\\\\docs\\\\introduction\\\\terminology.md\")",
-      "Bash(Get-Content \"c:\\\\Users\\\\DAVID\\\\Downloads\\\\well-known\\\\documentation\\\\docs\\\\introduction\\\\rate-limiting.md\")"
+      "Bash(Get-Content \"c:\\\\Users\\\\DAVID\\\\Downloads\\\\well-known\\\\documentation\\\\docs\\\\introduction\\\\rate-limiting.md\")",
+      "Bash(mkdir -p \"c:\\\\Users\\\\DAVID\\\\Downloads\\\\well-known\\\\documentation\\\\docs\\\\courier-s2s\")"
+    ],
+    "additionalDirectories": [
+      "c:\\Users\\DAVID\\Downloads\\well-known\\documentation\\docs"
     ]
   }
 }
